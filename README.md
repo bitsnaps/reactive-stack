@@ -1,4 +1,6 @@
+# Reactive Stack
 
+A simple demo ecommerce example using express.js, rethinkdb, vue, rxjs.
 
 ```
 npx express-generator --view=ejs

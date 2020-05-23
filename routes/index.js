@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var Rx = require('rx');
 const r = require('rethinkdb');
 
 
@@ -7,15 +8,41 @@ let connection;
 r.connect({host: process.env.DB_HOST || 'localhost', port: process.env.DB_PORT || 28015, db: process.env.DB_NAME ||'test'})
     .then(conn => {
       connection = conn;
+      // We set up a changefeed on "products" table
+      return r.table('products').changes().run(connection);
+    }).then(cursor => {
+          cursor.each((err, row) => {
+            if (err) throw err;
+            const product = row.new_val;
+            if (product)
+              console.log(product.name+' changed.');
+        })
     });
 
 /* GET home page. */
 router.get('/', async (req, res, next) => {
-  const products = await r.table('products')/*.orderBy(r.desc('date'))*/.run(connection)
-      .then(cursor => cursor.toArray());
+  // const products = await r.table('products')/*.orderBy(r.desc('date'))*/.run(connection)
+  //     .then(cursor => cursor.toArray());
   // console.log(products);
+  // res.render('index', { products: products });
+
+  const products = await getProducts()
+    .toPromise()
+    .then(
+      products => products,
+      err => res.status(500).send(err.message)
+    );
+
   res.render('index', { products: products });
 });
+
+function getProducts() {
+  return Rx.Observable.of(r.table('products')
+    .orderBy(r.desc('date'))
+    .run(connection)
+    .then(cursor => cursor.toArray())
+    );
+}
 
 /* Show the view to create a new product. */
 router.get('/new', (req, res, next) => {

@@ -15,7 +15,9 @@
     "morgan": "~1.9.1",
     "rethinkdb": "^2.4.2",
     "rx": "^4.1.0",
-    "rxjs": "^6.5.5"
+    "rxjs": "^6.5.5",
+    "rxjs-compat": "^6.5.5",
+    "vue": "^2.6.11"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
