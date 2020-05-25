@@ -3,9 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon ./bin/www"
+    "clean": "rm -rf ./dist",
+    "start": "node ./bin/www",
+    "dev": "nodemon ./bin/www",
+    "build-dev": "rm -rf ./dist && webpack --mode development --config webpack.config.js && webpack --mode development",
+    "build-prod": "webpack -p --mode production"
   },
   "dependencies": {
+    "body-parser": "^1.19.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
@@ -14,12 +19,32 @@
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "rethinkdb": "^2.4.2",
+    "reveal": "0.0.4",
+    "reveal.js": "^4.0.0",
     "rx": "^4.1.0",
     "rxjs": "^6.5.5",
     "rxjs-compat": "^6.5.5",
-    "vue": "^2.6.11"
+    "vue": "^2.6.11",
+    "vue-hot-reload-api": "^2.3.4",
+    "vue-resource": "^1.5.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "@babel/core": "^7.9.6",
+    "@babel/preset-env": "^7.9.6",
+    "@vue/component-compiler-utils": "^3.1.2",
+    "babel-loader": "^8.1.0",
+    "css-loader": "^3.5.3",
+    "file-loader": "^6.0.0",
+    "html-loader": "^1.1.0",
+    "html-webpack-plugin": "^4.3.0",
+    "nodemon": "^2.0.4",
+    "style-loader": "^1.2.1",
+    "vue-loader": "^15.9.2",
+    "vue-template-compiler": "^2.6.11",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-middleware": "^3.7.2",
+    "webpack-hot-middleware": "^2.25.0",
+    "webpack-node-externals": "^1.7.2"
   }
 }

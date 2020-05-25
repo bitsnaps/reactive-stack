@@ -5,7 +5,11 @@ const r = require('rethinkdb');
 
 
 let connection;
-r.connect({host: process.env.DB_HOST || 'localhost', port: process.env.DB_PORT || 28015, db: process.env.DB_NAME ||'test'})
+r.connect({
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 28015,
+  db: process.env.DB_NAME ||'test'
+})
     .then(conn => {
       connection = conn;
       // We set up a changefeed on "products" table
@@ -29,11 +33,12 @@ router.get('/', async (req, res, next) => {
   const products = await getProducts()
     .toPromise()
     .then(
-      products => products,
+      products => res.json(products),
       err => res.status(500).send(err.message)
     );
 
-  res.render('index', { products: products });
+  // res.render('index', { products: products });
+  res.send(products);
 });
 
 function getProducts() {
@@ -45,9 +50,9 @@ function getProducts() {
 }
 
 /* Show the view to create a new product. */
-router.get('/new', (req, res, next) => {
-  res.render('new');
-});
+// router.get('/new', (req, res, next) => {
+//   res.render('new');
+// });
 
 /* Show the  product view. */
 router.get('/product', (req, res, next) => {
@@ -55,28 +60,29 @@ router.get('/product', (req, res, next) => {
     .get(req.query.id)
     .run(connection, function (err, product){
       if (err) throw err;
-      res.render('product', { product: product });
+      // res.render('product', { product: product });
+      res.json(product);
     });
 });
 
 /* Save a new product to the database */
-router.post('/new', async (req, res, next) => {
-    const product = {
-        name: req.body.name,
-        price: req.body.price,
-        date: new Date(),
-    };
-  r.table('products').insert(product).run(connection)
-      .then(() => res.redirect('/'));
-});
+// router.post('/new', async (req, res, next) => {
+//     const product = {
+//         name: req.body.name,
+//         price: req.body.price,
+//         date: new Date(),
+//     };
+//   r.table('products').insert(product).run(connection)
+//       .then(() => res.redirect('/'));
+// });
 
-router.post('/delete', async (req, res) => {
-  r.table('products')
-    .get(req.body.id)
-    .delete()
-    .run(connection)
-    .then(() => res.redirect('/'))
-    .catch( error => response.send( error ) );
-});
+// router.post('/delete', async (req, res) => {
+//   r.table('products')
+//     .get(req.body.id)
+//     .delete()
+//     .run(connection)
+//     .then(() => res.redirect('/'))
+//     .catch( error => response.send( error ) );
+// });
 
 module.exports = router;
