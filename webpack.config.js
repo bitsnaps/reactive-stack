@@ -84,7 +84,7 @@ const config = {
     new HtmlWebPackPlugin({
       // appMountId: 'app',
       template: "./src/index.html",
-      filename: "index.html",
+      // filename: "index.html",
       // excludeChunks: [ ]
     }),
 
