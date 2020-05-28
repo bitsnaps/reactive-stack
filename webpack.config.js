@@ -59,12 +59,12 @@ const config = {
         {
           test: /\.css$/,
           use: [
-            // 'style-loader',
+            'style-loader',
             'vue-style-loader',
             'css-loader'
           ]
         },
-
+        { test: /\.(png|woff|woff2|eot|ttf|svg)$/, use: ['url-loader?limit=100000'] }
     ]
   },
   resolve: {
@@ -76,19 +76,19 @@ const config = {
     mainFiles: ["index"],
 		alias: {
 			"images": path.resolve(__dirname, "..", "client", "img"),
-			"vue$": "vue/dist/vue.common.js"
+			"vue$": "vue/dist/vue.common.js",
+      // vue$: 'vue/dist/vue.esm.js'
 		}
   },
   plugins: [
     new VueLoaderPlugin(),
+    new webpack.HotModuleReplacementPlugin(),
     new HtmlWebPackPlugin({
       // appMountId: 'app',
       template: "./src/index.html",
       // filename: "index.html",
       // excludeChunks: [ ]
     }),
-
-    new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin()
   ]
 };

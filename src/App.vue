@@ -15,7 +15,7 @@
 </template>
 
 <script>
-// import Reveal from 'reveal.js/js/reveal'
+import Reveal from 'reveal.js/dist/reveal'
 
 export default {
   name: 'app',
@@ -23,7 +23,22 @@ export default {
     // HelloWorld
   },
   mounted() {
-    // Reveal.initialize()
+    Reveal.initialize()
   }
 }
 </script>
+
+<style>
+@import url('../node_modules/reveal.js/dist/reveal.css');
+@import url('../node_modules/reveal.js/dist/theme/white.css');
+
+#app {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  /* margin-top: 60px; */
+  height: 100vh;
+}
+</style>
