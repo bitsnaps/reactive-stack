@@ -117,3 +117,5 @@ dist
 
 # rethinkdb data directory
 rethinkdb_data
+
+.DS_Store
