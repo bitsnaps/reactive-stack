@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div class="reveal">
-      <p>Rethinked Stack {{ counter }}</p>
+      <p>Rethinked Stack</p>
       <div class="slides">
         <section>
           <ul>
@@ -29,13 +29,13 @@ export default {
   name: 'app',
   data (){
     return {
-      counter: Number,
+      // counter: Number,
       products: []
     }
   },
   subscriptions: function () {
     return {
-      counter: interval(800)
+      // counter: interval(800)
     }
   },
   components: {
@@ -63,7 +63,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 @import url('../node_modules/reveal.js/dist/reveal.css');
 @import url('../node_modules/reveal.js/dist/theme/white.css');
 
