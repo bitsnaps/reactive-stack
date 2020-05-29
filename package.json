@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "clean": "rm -rf ./dist",
+    "clean": "rm -rf dist/*",
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www",
-    "build-dev": "rm -rf ./dist && webpack --mode development --config webpack.config.js && webpack --mode development",
-    "build-prod": "webpack -p --mode production"
+    "build:dev": "rm -rf dist/* && webpack --mode development --config webpack.config.js",
+    "build:prod": "webpack -p --mode production"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
