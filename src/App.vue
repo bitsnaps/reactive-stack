@@ -1,9 +1,15 @@
 <template>
   <div id="app">
     <div class="reveal">
-      <p>Rethinked Stack</p>
+      <p>Rethinked Stack {{ counter }}</p>
       <div class="slides">
-        <section>Single Horizontal Slide</section>
+        <section>
+          <ul>
+            <li v-for="p in this.products">
+              {{ p.name }}( {{ p.price }}$ )
+            </li>
+          </ul>
+        </section>
         <section>
           <section>Vertical Slide 1</section>
           <section>Vertical Slide 2</section>
@@ -16,14 +22,17 @@
 
 <script>
 import Reveal from 'reveal.js/dist/reveal'
-import Vue from 'vue'
-import VueRx from 'vue-rx'
-import { Observable, interval }from 'rxjs'
+import { Observable, interval } from 'rxjs'
 
-Vue.use(VueRx)
 
 export default {
   name: 'app',
+  data (){
+    return {
+      counter: Number,
+      products: []
+    }
+  },
   subscriptions: function () {
     return {
       counter: interval(800)
@@ -41,6 +50,15 @@ export default {
       // default/cube/page/concave/zoom/linear/fade/none
       transition: 'none',
     }*/)
+
+    this.$http.get('http://localhost:3000/api/').then(response => {
+
+      this.products = response.body;
+      console.log(this.products);
+
+    }, response => {
+        console.log('Error: ', response)
+    });
   }
 }
 </script>
