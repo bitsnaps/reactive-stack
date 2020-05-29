@@ -16,14 +16,31 @@
 
 <script>
 import Reveal from 'reveal.js/dist/reveal'
+import Vue from 'vue'
+import VueRx from 'vue-rx'
+import { Observable, interval }from 'rxjs'
+
+Vue.use(VueRx)
 
 export default {
   name: 'app',
+  subscriptions: function () {
+    return {
+      counter: interval(800)
+    }
+  },
   components: {
     // HelloWorld
   },
   mounted() {
-    Reveal.initialize()
+    Reveal.initialize(/*{
+      controls: true,
+      progress: true,
+      history: true,
+      center: true,
+      // default/cube/page/concave/zoom/linear/fade/none
+      transition: 'none',
+    }*/)
   }
 }
 </script>
