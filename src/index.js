@@ -3,6 +3,7 @@ import VueRx from 'vue-rx'
 import VueResource from 'vue-resource'
 import App from './App.vue'
 
+
 Vue.use(VueResource)
 Vue.use(VueRx/*, {
   Observable

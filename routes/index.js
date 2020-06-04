@@ -34,11 +34,11 @@ router.get('/', async (req, res, next) => {
     .toPromise()
     .then(
       products => res.json(products),
-      err => res.status(500).send(err.message)
+      err => res.status(500).json(err.message)
     );
 
   // res.render('index', { products: products });
-  res.send(products);
+  // res.send(products);
 });
 
 function getProducts() {
@@ -46,23 +46,39 @@ function getProducts() {
     .orderBy(r.desc('date'))
     .run(connection)
     .then(cursor => cursor.toArray())
-    );
+  );
 }
 
-/* Show the view to create a new product. */
-// router.get('/new', (req, res, next) => {
-//   res.render('new');
-// });
-
 /* Show the  product view. */
-router.get('/product', (req, res, next) => {
-  r.table('products')
+router.get('/product', async (req, res, next) => {
+  await r.table('products')
     .get(req.query.id)
     .run(connection, function (err, product){
       if (err) throw err;
+      // dummy stock
+      product.stock = Math.floor(Math.random()*10);
       // res.render('product', { product: product });
       res.json(product);
     });
+});
+
+/* Save products cart to the database */
+router.post('/save', async (req, res, next) => {
+  var cart = req.body.cart
+  var products = [];
+  cart.forEach( product => {
+    products.push({
+        id: product.id,
+        date: new Date(),
+        qte: 1
+    });
+  });
+
+  await r.table('carts').insert(products).run(connection)
+      .then(() => res.json(products));
+
+  // r.table('carts').insert(cart).run(connection)
+  //     .then(() => res.redirect('/'));
 });
 
 /* Save a new product to the database */
@@ -84,5 +100,36 @@ router.get('/product', (req, res, next) => {
 //     .then(() => res.redirect('/'))
 //     .catch( error => response.send( error ) );
 // });
+
+router.get('/carts', async (req, res, next) => {
+  const carts = await getCarts()
+    .toPromise()
+    .then(
+      carts => res.json(carts),
+      err => res.status(500).json(err.message)
+    );
+});
+
+function getCarts() {
+  return Rx.Observable.of(r.table('carts')
+    .orderBy(r.desc('date'))
+    .run(connection)
+    .then(cursor => cursor.toArray())
+  );
+}
+
+router.delete('/carts/:id', async (req, res, next) => {
+  console.log(req.params.id);
+  // var id = '990bc097-3364-4add-a3b2-b44fc2a46334'// req.body.id
+  var id = req.params.id
+  await r.table('carts')
+    .get(id)
+    .delete()
+    .run(connection, (err, result) => {
+      if (err) throw err;
+      res.status(204).send()
+    })
+
+});
 
 module.exports = router;
