@@ -4,36 +4,41 @@
       <div class="slides">
         <section id="main">
 
+          <!-- navbar header -->
           <header class="header">
             <nav class="nav">
               <ul class="nav-links">
                 <li class="link">
-                  <a href="#" @click="toggleCart">Cart {{ cart.length > 0 ? `(${cart.length})` :'' }}</a>
+                  <a href="/admin">Administration</a>
+                </li>
+                <li class="link">
+                  <a href="#" @click="toggleCart">Cart {{ this.cartIsEmpty() ?'': `(${this.getCartTotalCount()})` }}</a>
                 </li>
               </ul>
             </nav>
             <slot></slot>
           </header>
 
+          <!-- main product list -->
           <ul class="product-list list card-container">
-            <li v-for="(product, index) in products" :key="index" class="product">
+            <li v-for="(product, index) in this.products" :key="index" class="product">
                 <span class="product-image">
-                  <img :src="product.image" alt="" width="140px">
+                  <img :id="'img-'+product.id" :src="product.image" @error="loadThumbnail(product.id)" alt="" width="140px">
                 </span>
                 <div class="product-box">
                   <span class="product-name">
                     {{ product.name }}
                   </span>
-                  <div class="product-price">
-                    <span>$ {{ product.price }}, 00</span>
+                  <div class="product-price text-large">
+                    <span>$ {{ product.price }}, 00 (Qte: {{ product.stock}})</span>
                   </div>
                   <span class="product-details">
                     {{ product.details }}
                   </span>
                   <div class="button-actions">
-                    <button :class="'btn btn-large btn-'+(productInCart(product)?'danger':'success')"
-                      @click="addOrRemoveProduct(product)">
-                      {{ productInCart(product)?'Remove from Cart':'Add to Cart' }}
+                    <button :class="'btn btn-large btn-'+(productAvailable(product)?'success':'danger')"
+                      @click="addProduct(product)">
+                      {{ productAvailable(product)?'Add to Cart':'Out of Stock!' }}
                     </button>
                     <!-- <button class="btn btn-large btn-info" @click="addFavorites(product)">
                       add to favorits
@@ -44,19 +49,32 @@
             </li>
           </ul>
 
+          <!-- modal dialog -->
           <transition name="fade">
             <div class="modal" v-show="dialog">
-              <h4>Details</h4>
+              <h5>Details</h5>
               <span v-if="this.cartIsEmpty()">
                 Your Cart is Empty!
               </span>
               <div class="product-list" v-if="!this.cartIsEmpty()">
-                <ul class="list">
-                  <li v-for="(product, index) in this.cart" :key="index" class="product">
-                    {{ product.name }} X 1
-                  </li>
-                </ul>
-                <p>Total: {{ this.getCartTotal() }}</p>
+                <table class="product-table-cart">
+                  <tbody>
+                    <tr v-for="(product, index) in this.cart" :key="index" class="product-cart">
+                      <td>{{ product.name }}</td>
+                      <td>{{ product.quantity }} X {{ product.price }}</td>
+                      <td><strong>{{ (product.quantity * product.price) }}</strong></td>
+                      <td><a href="#" @click="removeProduct(product)">Remove</a> </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="text-large">
+                      <td colspan="2" class="pull-right">Total:</td>
+                      <td><strong>{{ this.getCartTotal() }}</strong></td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+
               </div>
               <div class="button-actions">
                 <button class="btn btn-large btn-danger" @click="toggleCart">
@@ -66,31 +84,45 @@
             </div>
           </transition>
 
-        </section>
+        </section><!-- #main -->
 
         <section>
 
           <section id="cart">
-            <div class="product-table" v-if="!this.cartIsEmpty()">
+            <div v-if="this.cartIsEmpty()">
+              <h1>Your Cart is Empty</h1>
+              <a href="#" @click="moveLeft()">back to Home</a>
+              <!-- <br>
+              <a href="#" @click="goBack()">Go Back</a> -->
+            </div>
+            <div class="product-table text-small" v-if="!this.cartIsEmpty()">
               <table>
                 <thead>
                   <tr>
-                    <th>Product Name</th>
+                    <th>Product</th>
                     <th>Price</th>
                     <th>Qte</th>
+                    <th>Total</th>
+                    <th>Availability</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(product, index) in this.cart" :key="index" class="product">
                     <td>{{ product.name }}</td>
                     <td>{{ product.price }}</td>
-                    <td>{{ 1 }}</td>
+                    <td>{{ product.quantity }}</td>
+                    <td>{{ product.quantity * product.price }}</td>
+                    <td>{{ product.stock > 0? 'Availabile':'Out of Stock!' }}</td>
+                    <td> <button class="btn btn-small btn-danger" @click="removeProduct(product)">X</button> </td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="2"></td>
-                    <td>Total: {{ this.getCartTotal() }}</td>
+                    <td class="pull-right" colspan="3">Total:</td>
+                    <td><strong>{{ this.getCartTotal() }}</strong></td>
+                    <td></td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
@@ -99,38 +131,57 @@
               </div>
             </div>
 
-          </section>
+          </section><!-- #cart -->
 
           <section id="checkout">
-            <div class="cart-table" v-if="this.carts.length > 0">
+            <div v-if="this.carts.length == 0">
+              <h1>You do not have history</h1>
+              <a href="#" @click="goBack()">Go Back</a>
+            </div>
+            <div class="cart-table text-small" v-if="this.carts.length > 0">
               <table>
                 <thead>
                   <tr>
-                    <th>Product</th>
                     <th>Date</th>
-                    <th>Qte</th>
+                    <th>Nbr of Products</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(cart, index) in this.carts" :key="index" class="cart">
-                    <td>{{ cart.id }}</td>
-                    <td>{{ cart.date }}</td>
-                    <td>{{ cart.qte }}</td>
-                    <td> <button class="btn btn-small btn-danger" @click="removeProductFromCart(cart)">X</button> </td>
+                    <td>{{ new Date(Date.parse(cart.date)).toLocaleString() }}</td>
+                    <td>{{ cart.products.length }}</td>
+                    <td>{{ cart.total }}</td>
+                    <td>{{ cart.status }}</td>
+                    <td><a href="#" v-if="cart.status==='Pending'" @click="checkoutCart(cart)">Checkout</a></td>
+                    <td><a href="#" v-if="cart.status==='Completed'" @click="cancelCart(cart)">Cancel</a></td>
+                    <td><a href="#" @click="deleteCart(cart)">Delete</a></td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="2"></td>
-                    <td>Total: {{ this.carts.length }}</td>
+                    <td colspan="2" class="pull-right">Total:</td>
+                    <td><strong>{{ this.getTotalCarts() }}</strong></td>
+                    <td></td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
 
-          </section>
+          </section><!-- #checkout -->
 
-          <section>Vertical Slide 3</section>
+          <section id="confirmed">
+            <div v-if="this.carts.length > 0">
+              <h1>Thank you for your purchase!</h1>
+              <p>You have {{ this.totalCompletedCarts() }} Completed Cart.</p>
+              <a href="#" @click="goBack()">Go Back</a>
+            </div>
+          </section><!-- #confirmed -->
+
         </section>
 
       </div>
@@ -171,29 +222,58 @@ export default {
     // HelloWorld
   },
   methods: {
-    addOrRemoveProduct(product) {
+    removeProduct(product) {
       var index = this.cart.indexOf(product)
       if (index >= 0){
+        // update stock
+        this.updateStock(product)
+        // remove the the product
         this.cart.splice(index, 1)
-      } else {
-        this.addProduct(product)
       }
     },
-    addProduct(product) {
-      this.$http.get(URL_ENDPOINT+'/product?id='+product.id).then(response => {
-        // check for stock availability
-        console.log(response.body.stock);
-        if (response.body.stock > 0){
-          this.cart.push(product)
+    updateStock(product){
+      this.$http.get(URL_ENDPOINT+'/cart/remove?id='+product.id+'&qte='+product.quantity).then(response => {
+        var new_val = response.body.changes[0].new_val
+        if (new_val.stock > 0){
+          product.stock = new_val.stock
         } else {
-          alert('Product Out of Stock!')
+          console.log(`Product: ${product.id} Out of Stock!`)
         }
       }, response => {
             console.log('Error: ', response)
       }).catch(error => {
           console.log(error)
       })
+    },
+    addProduct(product) {
+      var qte = 1
+      // check for stock availability (can be done on the server side for better experience)
+      if (!this.productAvailable(product)){
+        alert('Product Out of Stock!')
+        return
+      }
+      this.$http.get(URL_ENDPOINT+'/cart/add?id='+product.id+ '&qte='+qte).then(response => {
+        var new_val = response.body.changes[0].new_val
+        // get current stock
+        product.stock = new_val.stock
+        // too late! we do not check current stock here coz it's already decremented
 
+        // if new product add it to the Cart with Qte = 1
+        if (!this.productInCart(product)){
+          product.quantity = qte
+          this.cart.push(product)
+        } else {
+          // otherwise increment qte
+          product.quantity += qte
+          var item = this.cart.find(item => item.id == product.id)
+          item.quantity = product.quantity
+          item.stock = product.stock
+        }
+      }, response => {
+            console.log('Error: ', response)
+      }).catch(error => {
+          console.log(error)
+      })
     },
     // addFavorites(product) {
     //   this.favorites.push(product);
@@ -207,17 +287,74 @@ export default {
     cartIsEmpty(){
       return this.cart.length == 0
     },
+    getCartTotalCount(){
+      var qte = 0
+      return this.cart
+        .map( p => qte += parseInt(p.quantity) )
+        .reduce(p => qte)
+    },
     getCartTotal(){
       var total = 0
       return this.cart
-        .map( p => total += parseFloat(p.price) )
+        .map( p => total += parseFloat(p.price) * parseFloat(p.quantity) )
         .reduce(p => total)
+    },
+    getTotalCarts(){
+      var total = 0
+      return this.carts
+        .map( cart => total += parseFloat(cart.total) )
+        .reduce(() => total)
+    },
+    checkoutCart(cart){
+      this.$http.post(URL_ENDPOINT+'/carts/checkout', {
+        id: cart.id
+      }).then(response => {
+        if (response.body.changes.length > 0){
+          var new_cart = response.body.changes[0].new_val
+          cart.status = new_cart.status
+          Reveal.down();
+        }
+      }, response => {
+          console.log('Error: ', response)
+      }).catch(error => {
+        console.log(error)
+      });
+    },
+    cancelCart(cart){
+      this.$http.post(URL_ENDPOINT+'/carts/cancel', {
+        id: cart.id
+      }).then(response => {
+        if (response.body.changes.length > 0){
+          var new_cart = response.body.changes[0].new_val
+          cart.status = new_cart.status
+        }
+      }, response => {
+          console.log('Error: ', response)
+      }).catch(error => {
+        console.log(error)
+      });
+
+    },
+    deleteCart(cart){
+      if (confirm('Do you want to delete this Cart ?')){
+        this.$http.delete(URL_ENDPOINT+ '/carts/'+ cart.id)
+        .then(response => {
+          var index = this.carts.indexOf(cart)
+          if (index >= 0 ){
+            this.carts.splice(index, 1)
+          }
+        }, response => {
+            console.log('Error: ', response)
+        }).catch(error => {
+          console.log(error)
+        });
+      }
     },
     saveCart(){
       this.$http.post(URL_ENDPOINT+'/save', {
         cart: this.cart
       }).then(response => {
-        // console.log(response.body);
+        this.cart = [];
         Reveal.down();
       }, response => {
           console.log('Error: ', response)
@@ -225,7 +362,8 @@ export default {
         console.log(error)
       })
     },
-    loadCart() {
+    loadOrUpdateCarts() {
+      this.carts = [];
       this.$http.get(URL_ENDPOINT+'/carts').then(response => {
         Observable.of(response.body)
         .flatMap( cart => cart )
@@ -239,18 +377,42 @@ export default {
         console.log(error)
       })
     },
-    removeProductFromCart(cart){
-        this.$http.delete(URL_ENDPOINT+ '/carts/'+ cart.id)
-        .then(response => {
-          var index = this.carts.indexOf(cart)
-          this.carts.splice(index, 1)
-        }, response => {
-            console.log('Error: ', response)
-        }).catch(error => {
-          console.log(error)
+    totalCompletedCarts(){
+      return (this.carts.length === 0?0: this.carts.filter( c => c.status == 'Completed').length)
+    },
+    reloadStock() {
+      this.$http.get(URL_ENDPOINT).then(response => {
+        Observable.of(response.body)
+        .flatMap( p => p )
+        // .filter( p => p.stock > 0)
+        .subscribe( product => {
+          this.cart.forEach( p => {
+            if (p.id === product.id){
+              p.stock = product.stock
+            }
+          })
         })
-
+      }, response => {
+          console.log('Error: ', response)
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+    productAvailable(product){
+      return product.stock > 0
+    },
+    loadThumbnail(id){
+      document.getElementById('img-'+id).src = '/img/placeholder.png'
+    },
+    moveLeft(){
+      Reveal.left();
+    },
+    goBack(){
+      Reveal.prev();
     }
+  },
+  created() {
+    //
   },
   mounted() {
 
@@ -266,10 +428,11 @@ export default {
     Reveal.on('slidechanged', event => {
       // event.previousSlide, event.currentSlide, event.indexh, event.indexv
       if (event.currentSlide.id === 'cart'){
-        console.log('query products availability');
-        //...
+        this.reloadStock()
+
       } else if (event.currentSlide.id === 'checkout'){
-        this.loadCart()
+        this.loadOrUpdateCarts()
+
       }
     } );
 
@@ -279,6 +442,7 @@ export default {
         .flatMap( p => p)
         // filter out available/stock...
         // .filter( p => p.price > 300 )
+        // .filter( p => p.stock > 0 )
         .subscribe( p => {
           this.products.push(p)
         })
@@ -327,7 +491,7 @@ export default {
 
 .nav-links {
   width: 100%;
-  display: flex;
+  display: inline-flex !important;
   justify-content: flex-start;
 }
 
@@ -378,7 +542,7 @@ export default {
 
 .modal {
   width: 100%;
-  max-width: 500px;
+  max-width: 800px;
   height: auto;
   box-sizing: border-box;
   padding: 1em;
@@ -427,8 +591,15 @@ ul.product-list {
 
 .product .product-price {
   position: relative;
-  left: 140px;
+  left: 80px;
+}
+
+.text-large {
   font-size: 140%;
+}
+
+.text-small {
+  font-size: 70%;
 }
 
 .product-box {
@@ -437,6 +608,22 @@ ul.product-list {
   top: -180px;
   left: 160px;
   max-width: 230px;
+}
+
+.product-table-cart {
+  font-size: 40%;
+}
+
+.product-details {
+  font-size: 80%
+}
+
+.product-cart {
+  font-size: 120%
+}
+
+.pull-right {
+  text-align: right !important;
 }
 
 </style>

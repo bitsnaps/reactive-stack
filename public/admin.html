@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Administration</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel='stylesheet' href='/css/style.css' />
+    <!-- <script src="https://unpkg.com/rxjs/bundles/rxjs.umd.js"></script> -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+  </head>
+  <body>
+
+    <div class="container-fluid text-center" id="app">
+
+      <nav class="navbar navbar-light bg-light">
+        <a class="navbar-brand" href="/">Home</a>
+
+        <form class="form-inline" v-on:submit.prevent="search">
+          <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search"
+          v-model="query">
+          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+      </nav>
+
+      <div class="row product-list">
+      <div class="card" v-for="(product, index) in products" :key="index">
+          <div class="card-body">
+              <h5 class="card-title">
+                <a :href="'/api/product?id='+product.id"> {{ product.name }} </a>
+              </h5>
+              <div class="card-image mb-2">
+                <img :src="product.image" alt="" width="120px">
+              </div>
+              <span class="card-subtitle mb-2">
+                Rating: {{ product.stars }} of 5
+                <br>
+                Price: {{ product.price }}$
+              </span>
+              <div class="card-subtitle mt-2">
+                <button type="button" class="btn btn-sm btn-danger" @click="updateStock('add', product.id)" >-</button>
+                Stock: {{ product.stock }}
+                <button type="button" class="btn btn-sm btn-success" @click="updateStock('remove', product.id)">+</button>
+              </div>
+              <p class="card-text mt-2 text-muted">
+                {{ product.details }}$
+              </p>
+          </div>
+          <div class="card-footer">
+            <a href="#"></a>
+            <form action="/api/product/delete" method="post">
+              <input type="hidden" name="id" :value="product.id">
+              <input type="submit" class="btn btn-sm btn-danger" value="Delete">
+            </form>
+          </div>
+      </div>
+    </div>
+
+  <div class="row">
+    <div class="container-fluid text-center mt-5">
+     <h4>Create a Product</h4>
+
+     <form method="post" action="/api/product/create">
+
+         <div class="form-group">
+             <label>Name
+                 <input type="text" class="form-control" name="name">
+             </label>
+         </div>
+
+         <div class="form-group">
+             <label>Price
+                 <input type="number" class="form-control" name="price">
+             </label>
+         </div>
+
+         <div class="form-group">
+             <label>Image URL
+                 <input type="url" class="form-control" name="image">
+             </label>
+         </div>
+
+         <div class="form-group">
+             <label>Stock
+                 <input type="number" class="form-control" name="stock">
+             </label>
+         </div>
+
+         <div class="form-group">
+             <label>Stars
+                 <input type="text" class="form-control" name="stars">
+             </label>
+         </div>
+
+         <div class="form-group">
+           <label for="details">Details</label>
+           <textarea class="form-control" name="details" rows="5" cols="5"></textarea>
+         </div>
+
+         <button type="submit" class="btn btn-primary">Save</button>
+     </form>
+     </div>
+   </div>
+
+  </div>
+
+  </body>
+<script>
+
+new Vue({
+  el: '#app',
+  data(){
+    return {
+      products: [],
+      query: ''
+    }
+  },
+  methods: {
+    search(){
+      fetch(`http://localhost:3000/api/search?key=${this.query}`)
+        .then(response => response.json())
+        .then( products => {
+          this.products = products;
+      })
+    },
+    updateStock(action, id){
+      fetch(`http://localhost:3000/api/cart/${action}?id=${id}&qte=1`)
+        .then(response => response.json())
+        .then( response => {
+          var new_val = response.changes[0].new_val;
+          this.products.find( p => p.id === new_val.id).stock = new_val.stock;
+      })
+    }
+  },
+  mounted(){
+    this.search();
+  },
+
+});
+
+</script>
+</html>

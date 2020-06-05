@@ -10,3 +10,12 @@ p {
 a {
   color: #00B7FF;
 }
+
+.card {
+  margin: 10px;
+  width: 300px;
+}
+
+.product-list {
+  margin: auto;
+}

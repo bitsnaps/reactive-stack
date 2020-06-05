@@ -13,14 +13,16 @@ r.connect({
     .then(conn => {
       connection = conn;
       // We set up a changefeed on "products" table
-      return r.table('products').changes().run(connection);
+      // return r.table('products').changes().run(connection);
     }).then(cursor => {
+      /*
           cursor.each((err, row) => {
             if (err) throw err;
             const product = row.new_val;
             if (product)
               console.log(product.name+' changed.');
         })
+        */
     });
 
 /* GET home page. */
@@ -30,7 +32,7 @@ router.get('/', async (req, res, next) => {
   // console.log(products);
   // res.render('index', { products: products });
 
-  const products = await getProducts()
+  return await getProducts()
     .toPromise()
     .then(
       products => res.json(products),
@@ -41,41 +43,70 @@ router.get('/', async (req, res, next) => {
   // res.send(products);
 });
 
-function getProducts() {
-  return Rx.Observable.of(r.table('products')
-    .orderBy(r.desc('date'))
-    .run(connection)
-    .then(cursor => cursor.toArray())
-  );
-}
+router.get('/search/:key?', async (req, res, next) => {
+  return await getProducts( req.query.key )
+    .toPromise()
+    .then(
+      products => res.json(products),
+      err => res.status(500).json(err.message)
+    );
+});
 
-/* Show the  product view. */
+// Query for a product
 router.get('/product', async (req, res, next) => {
-  await r.table('products')
-    .get(req.query.id)
-    .run(connection, function (err, product){
-      if (err) throw err;
-      // dummy stock
-      product.stock = Math.floor(Math.random()*10);
-      // res.render('product', { product: product });
-      res.json(product);
-    });
+  return await getProduct(req.query.id)
+    .toPromise()
+    .then(
+      product => res.json(product),
+      err => res.status(500).json(err.message)
+    );
+});
+
+// Add a product to a Cart
+router.get('/cart/add', async (req, res, next) => {
+  var qte = parseInt(req.query.qte) || 1;
+  return await updateProduct(req.query.id,{
+    // here you can use conditional update for better realtime experience
+    stock: r.row('stock').add( - qte )
+  }).toPromise()
+  .then(
+    product => res.json(product),
+    err => res.status(500).json(err.message)
+  );
+});
+
+// Remove a product from a Cart
+router.get('/cart/remove', async (req, res, next) => {
+  return await updateProduct(req.query.id,{
+    stock: r.row('stock').add( parseInt(req.query.qte) )
+  }).toPromise()
+  .then(
+    product => res.json(product),
+    err => res.status(500).json(err.message)
+  );
 });
 
 /* Save products cart to the database */
 router.post('/save', async (req, res, next) => {
-  var cart = req.body.cart
   var products = [];
-  cart.forEach( product => {
+  var total = 0.0
+  req.body.cart.forEach( product => {
     products.push({
         id: product.id,
-        date: new Date(),
-        qte: 1
+        qte: product.quantity
     });
+    // just for test (it shouldn't be persistent anyway)
+    total += parseInt(product.quantity) * parseFloat(product.price)
   });
+  var cart = {
+    date: new Date(),
+    products: products,
+    total: total,
+    status: 'Pending'
+  }
 
-  await r.table('carts').insert(products).run(connection)
-      .then(() => res.json(products));
+  return await r.table('carts').insert(cart).run(connection)
+      .then(() => res.json(cart));
 
   // r.table('carts').insert(cart).run(connection)
   //     .then(() => res.redirect('/'));
@@ -102,25 +133,68 @@ router.post('/save', async (req, res, next) => {
 // });
 
 router.get('/carts', async (req, res, next) => {
-  const carts = await getCarts()
+  await getCarts()
     .toPromise()
     .then(
-      carts => res.json(carts),
+      jsonCarts => res.json(jsonCarts),
       err => res.status(500).json(err.message)
     );
 });
 
-function getCarts() {
-  return Rx.Observable.of(r.table('carts')
-    .orderBy(r.desc('date'))
-    .run(connection)
-    .then(cursor => cursor.toArray())
-  );
-}
+//  Update Cart Status
+router.post('/carts/checkout', async (req, res, next) => {
+  var id = req.body.id
+  await r.table('carts')
+    .get(id)
+    .update({
+      status: 'Completed'
+    }, {
+      returnChanges: true
+    })
+    .run(connection, (err, result) => {
+      if (err) throw err;
+      res.json(result)
+    })
+});
+
+router.post('/carts/cancel', async (req, res, next) => {
+  var id = req.body.id
+  await r.table('carts')
+    .get(id)
+    .update({
+      status: 'Pending'
+    }, {
+      returnChanges: true
+    })
+    .run(connection, (err, result) => {
+      if (err) throw err;
+      res.json(result)
+    })
+});
+
+// Create a product
+router.post('/product/create', async (req, res, next) => {
+  await r.table('products')
+    .insert(req.body)
+    .run(connection, (err, result) => {
+      if (err) throw err;
+      res.status(204).send()
+    })
+});
+
+// Delete a product by id
+router.post('/product/delete', async (req, res, next) => {
+  await r.table('products')
+    .get(req.body.id)
+    .delete()
+    .run(connection, (err, result) => {
+      if (err) throw err;
+      res.status(204).send()
+    })
+});
+
 
 router.delete('/carts/:id', async (req, res, next) => {
-  console.log(req.params.id);
-  // var id = '990bc097-3364-4add-a3b2-b44fc2a46334'// req.body.id
   var id = req.params.id
   await r.table('carts')
     .get(id)
@@ -131,6 +205,7 @@ router.delete('/carts/:id', async (req, res, next) => {
     })
 });
 
+// delete all products (dummy)
 router.get('/delete', async (req, res, next) => {
   await r.table('products')
     .delete()
@@ -140,25 +215,26 @@ router.get('/delete', async (req, res, next) => {
     })
 });
 
+// Create some products (dummy)
 router.get('/create', async (req, res, next) => {
   const products = [
         {
           name: 'Smartphone Xiaomi Mi A1 dual Android one 7.1',
           price: 1199,
           image: 'https://images-americanas.b2w.io/produtos/01/00/sku/29296/2/29296259G1.jpg',
-          stock: 0,
+          stock: 3,
           stars: 0,
           totalReviews: 0,
-          details: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s',
+          details: 'As powerful as it is beautiful, 2 cameras, 1 perfect portrait. 12MP＋12MP wide-angle/telephoto, 2x optical zoom, 1.25µm large pixels.',
         },
         {
           name: 'Smartphone Moto G 5S Dual Chip Android 7.0',
           price: 929,
           image: 'https://images-americanas.b2w.io/produtos/01/00/item/132474/0/132474081G1.png',
-          stock: 5,
+          stock: 0,
           stars: 1.5,
           totalReviews: 11,
-          details: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s',
+          details: 'Moto G (5th Gen) G5 - 4G LTE Dual Sim XT1671 32GB FingerPrint Octa-core Factory Unlocked Smartphone International Version - (Gold)',
         },
         {
           name: 'iPhone 8 Dourado 64GB Tela 4.7" IOS 11',
@@ -167,7 +243,7 @@ router.get('/create', async (req, res, next) => {
           stock: 1,
           stars: 1,
           totalReviews: 2,
-          details: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s',
+          details: 'IP67 water and dust resistant (maximum depth of 1 meter up to 30 minutes), 12MP camera with OIS and 4K video, 7MP FaceTime HD camera with Retina Flash.',
         },
         {
           name: 'Smartphone Samsung Galaxy S7 Edge',
@@ -176,7 +252,7 @@ router.get('/create', async (req, res, next) => {
           stock: 2,
           stars: 5,
           totalReviews: 310,
-          details: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s',
+          details: 'Beautifully designed inside and out, the Samsung Galaxy S7 edge exceeds your expectations. The slim dual-edge design ensures a great fit and feel whether in your hands or your pocket.',
         },
         {
           name: 'Smartphone Motorola Moto G6 Plus',
@@ -185,7 +261,7 @@ router.get('/create', async (req, res, next) => {
           stock: 4,
           stars: 2.9,
           totalReviews: 42,
-          details: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s',
+          details: 'he Motorola Moto G6 Plus is a good Android smartphone , great for photos, that can satisfy even the most demanding of users.',
         },
         {
           name: 'Smartphone Motorola Moto Z3 Play',
@@ -194,7 +270,7 @@ router.get('/create', async (req, res, next) => {
           stock: 3,
           stars: 0.5,
           totalReviews: 1,
-          details: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since the 1500s',
+          details: "Smartphone + much more: it's time for something more than a smartphone, The moto z3 play brings features that go far beyond today's smartphones.",
         },
       ]
 
@@ -205,5 +281,46 @@ router.get('/create', async (req, res, next) => {
       res.status(200).json(result)
     })
 });
+
+
+/* Rx Queries */
+
+function getProducts(key = '') {
+    return Rx.Observable.of(r.table('products')
+      .filter(function(product){
+        return product('name').match(`(?i)${key}`)
+      })
+      .orderBy(r.desc('date'))
+      .run(connection)
+      .then(cursor => cursor.toArray())
+    );
+}
+
+function getProduct(id) {
+  return Rx.Observable.of(r.table('products')
+    .get(id)
+    .run(connection)
+    .then(product => product)
+  );
+}
+
+function updateProduct(id, values) {
+  return Rx.Observable.of(r.table('products')
+    .get(id)
+    .update(values, {
+      returnChanges: true
+    })
+    .run(connection)
+    .then(product => product)
+  );
+}
+
+function getCarts() {
+  return Rx.Observable.of(r.table('carts')
+    .orderBy(r.desc('date'))
+    .run(connection)
+    .then(cursor => cursor.toArray())
+  );
+}
 
 module.exports = router;
