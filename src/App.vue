@@ -15,24 +15,31 @@
             <slot></slot>
           </header>
 
-          <ul class="list">
+          <ul class="product-list list card-container">
             <li v-for="(product, index) in products" :key="index" class="product">
-                <span class="product-name">
-                  {{ product.name }}
+                <span class="product-image">
+                  <img :src="product.image" alt="" width="140px">
                 </span>
-              <div class="product-price">
-                <span>$ {{ product.price }}, 00</span>
-              </div>
-
-              <div class="button-actions">
-                <button :class="'btn btn-large btn-'+(productInCart(product)?'danger':'success')"
-                  @click="addOrRemoveProduct(product)">
-                  {{ productInCart(product)?'Remove from Cart':'Add to Cart' }}
-                </button>
-                <!-- <button class="btn btn-large btn-info" @click="addFavorites(product)">
-                  add to favorits
-                </button> -->
-              </div>
+                <div class="product-box">
+                  <span class="product-name">
+                    {{ product.name }}
+                  </span>
+                  <div class="product-price">
+                    <span>$ {{ product.price }}, 00</span>
+                  </div>
+                  <span class="product-details">
+                    {{ product.details }}
+                  </span>
+                  <div class="button-actions">
+                    <button :class="'btn btn-large btn-'+(productInCart(product)?'danger':'success')"
+                      @click="addOrRemoveProduct(product)">
+                      {{ productInCart(product)?'Remove from Cart':'Add to Cart' }}
+                    </button>
+                    <!-- <button class="btn btn-large btn-info" @click="addFavorites(product)">
+                      add to favorits
+                    </button> -->
+                  </div>
+                </div>
 
             </li>
           </ul>
@@ -307,10 +314,6 @@ export default {
   list-style-type: none;
 }
 
-.product-price {
-  font-size: .6em;
-}
-
 .header {
   width: 100%;
   height: 70px;
@@ -404,6 +407,36 @@ export default {
 }
 .fade-enter, .fade-leave-to {
   opacity: 0;
+}
+
+ul.product-list {
+  display: flex;
+  flex-flow: wrap;
+}
+
+.product {
+  max-height: 180px;
+  flex: 1 0 48%;
+  margin: 1%;
+}
+
+.product .product-name {
+  font-weight: bold;
+  font-size: 120%;
+}
+
+.product .product-price {
+  position: relative;
+  left: 140px;
+  font-size: 140%;
+}
+
+.product-box {
+  font-size: .3em;
+  position: relative;
+  top: -180px;
+  left: 160px;
+  max-width: 230px;
 }
 
 </style>
