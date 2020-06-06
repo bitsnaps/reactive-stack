@@ -5,6 +5,9 @@ A simple example for Reactive Full Stack eCommerce web app for each layer:
 - Backend: Express.js & Rxjs
 - Frontend: Vue & RxJs & Reveal
 
+## Preview
+![](preview.gif)
+
 ```
 npx express-generator --view=ejs
 npm install dotenv --save
