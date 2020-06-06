@@ -44,6 +44,20 @@ http://localhost:3000/admin
 http://localhost:3000/api/delete
 ```
 
+P.S. You'll need to create two tables (`products` and `carts`) for this demo, you do that from the RethinkDb admin console (at `http://localhost:8080` by default), or by executing these queries (default DB `test`): 
+```
+r.db('test').tableCreate('products').run(connection, function(err, result) {
+    if (err) throw err;
+    console.log(JSON.stringify(result, null, 2));
+})
+
+r.db('test').tableCreate('cartss').run(connection, function(err, result) {
+    if (err) throw err;
+    console.log(JSON.stringify(result, null, 2));
+})
+
+```
+
 ### TODO:
 - Clean up and remove duplicated code
 - Use marblejs instead of express
