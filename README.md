@@ -51,7 +51,7 @@ r.db('test').tableCreate('products').run(connection, function(err, result) {
     console.log(JSON.stringify(result, null, 2));
 })
 
-r.db('test').tableCreate('cartss').run(connection, function(err, result) {
+r.db('test').tableCreate('carts').run(connection, function(err, result) {
     if (err) throw err;
     console.log(JSON.stringify(result, null, 2));
 })
