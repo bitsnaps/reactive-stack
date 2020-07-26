@@ -62,4 +62,4 @@ r.db('test').tableCreate('carts').run(connection, function(err, result) {
 - Clean up and remove duplicated code
 - Use marblejs instead of express
 - Use VueX & event bus
-- Use Vuetify & Vuelidate
+- Use Vuetify & Vuelidate (from https://github.com/bitsnaps/vuecommerce)
